@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Metadata Viewer</title>
+    <style>
+        /* Background styling with overlay */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('/images/background.png') no-repeat center center fixed;
+            background-size: cover;
+            background-color: #333; /* Fallback color */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: #ffffff;
+            position: relative;
+        }
+
+        /* Dark overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); /* Darken the background image */
+            z-index: 1;
+        }
+
+        /* Main content styling */
+        .content {
+            position: relative;
+            z-index: 2; /* Bring the content above the overlay */
+            width: 80%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        /* Form container */
+        .form-container {
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.1); /* Light transparency */
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Metadata item container */
+        .metadata-item {
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.1); /* Light transparency */
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Styling for dropdown menu */
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid #ddd;
+            background-color: white;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .dropdown-item {
+            padding: 8px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Styling for headings */
+        h1 {
+            font-size: 2em;
+            color: #ffffff;
+        }
+
+        label, select, input, button {
+            color: #ffffff;
+        }
+
+        input, select, button {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid #ffffff;
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        #metadataDetails {
+            white-space: pre-wrap;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        /* ADD THE NEW STYLING HERE */
+        select {
+            background-color: #ffffff; /* White background for the dropdown */
+            color: #000000; /* Black text color */
+            border: 1px solid #ffffff; /* White border to match */
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        option {
+            background-color: #ffffff; /* White background for each option */
+            color: #000000; /* Black text color for options */
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Metadata Viewer</h1>
+
+        <!-- Search Form and Dropdown -->
+        <div class="form-container">
+            <label for="tableName">Search Table Name:</label>
+            <input type="text" id="tableName" placeholder="Type table name">
+
+            <!-- Dropdown for matching table names -->
+            <div id="tableDropdown" class="dropdown"></div>
+
+            <label for="versionSelect">Select Version:</label>
+            <select id="versionSelect">
+                <option value="">Select version</option>
+            </select>
+            <button id="getMetaDataButton">Get Metadata</button>
+            <button id="getDataButton">Get Data</button>
+        </div>
+
+        <!-- Display Specific Metadata Details -->
+        <div id="specificMetadata" class="metadata-item">
+            <h2>Metadata Details</h2>
+            <pre id="metadataDetails"></pre>
+        </div>
+    </div>
+
+    <!-- JavaScript for Interactivity -->
+    <script>
+    // Search table names dynamically as the user types
+    // @todo Load all tables at the start?
+    document.getElementById("tableName").addEventListener("input", search_handler);
+
+    async function search_handler(event) {
+        const query = this.value.trim();
+        const tableDropdown = document.getElementById("tableDropdown");
+        tableDropdown.innerHTML = ""; // Clear previous results
+        tableDropdown.style.display = "none"; // Hide the dropdown by default
+
+        // if (!query) return;  // Skip if the input is empty
+
+        // Fetch matching table names
+        const response = await fetch(`/metadata/search/?query=${query}`);
+        const tableNames = await response.json();
+
+        // Populate table dropdown with matching names if there are results
+        if (tableNames.length > 0) {
+            tableDropdown.style.display = "block";
+            tableNames.forEach(name => {
+                const item = document.createElement("div");
+                item.className = "dropdown-item";
+                item.textContent = name;
+                item.onclick = function() {
+                    document.getElementById("tableName").value = name;  // Set selected name in input
+                    loadVersionsForTable(name);  // Load versions for selected table
+                    tableDropdown.style.display = "none";  // Hide the dropdown after selection
+                };
+                tableDropdown.appendChild(item);
+            });
+        }
+    }
+
+    // Hide dropdown when clicking outside of it
+    document.addEventListener("click", function(event) {
+        const tableDropdown = document.getElementById("tableDropdown");
+        if (!tableDropdown.contains(event.target) && event.target.id !== "tableName") {
+            tableDropdown.style.display = "none";
+        }
+    });
+
+    // Load versions for the selected table name
+    async function loadVersionsForTable(tableName) {
+        const versionSelect = document.getElementById("versionSelect");
+        versionSelect.innerHTML = "<option value=''>Select version</option>"; // Reset dropdown
+
+        // Fetch versions for the selected table name
+        const response = await fetch(`/table/versions/?table_name=${tableName}`);
+        const versions = await response.json();
+
+        // Populate version dropdown
+        versions.forEach(version => {
+            const option = document.createElement("option");
+            option.value = version;
+            option.textContent = `Version ${version}`;
+            versionSelect.appendChild(option);
+        });
+    }
+
+    // Fetch and display metadata for selected table and version
+    document.getElementById("getMetaDataButton").onclick = async function() {
+        const tableName = document.getElementById("tableName").value.trim();
+        const version = document.getElementById("versionSelect").value;
+        const metadataDetails = document.getElementById("metadataDetails");
+
+        if (!tableName || !version) {
+            alert("Please select both a table name and a version.");
+            return;
+        }
+
+        // Fetch metadata for the selected table and version
+        const response = await fetch(`/metadata/table/?table_name=${tableName}&version=${version}`);
+        const data = await response.json();
+
+        // Display metadata in JSON format
+        metadataDetails.textContent = JSON.stringify(data, null, 2);
+    };
+
+    // Fetch and display metadata for selected table and version
+    document.getElementById("getDataButton").onclick = async function() {
+        const tableName = document.getElementById("tableName").value.trim();
+        const version = document.getElementById("versionSelect").value;
+
+        if (!tableName || !version) {
+            alert("Please select both a table name and a version.");
+            return;
+        }
+
+        // Fetch metadata for the selected table and version
+        const response = await fetch(`/table/data/?table_name=${tableName}&version=${version}`);
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${tableName}_v${version}.parquet`; // Set the desired filename
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.URL.revokeObjectURL(downloadUrl);
+    };
+</script>
+</body>
+</html>

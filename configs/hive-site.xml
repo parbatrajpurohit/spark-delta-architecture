@@ -1,0 +1,83 @@
+<configuration>
+  <!-- Metastore Configuration -->
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:postgresql://postgres:5432/Meta_data</value>
+    <description>JDBC connect string for a JDBC metastore</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>org.postgresql.Driver</value>
+    <description>Driver class name for a JDBC metastore</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>MetricsDB</value>
+    <description>Username to use against metastore database</description>
+  </property>
+
+  <property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>password</value>
+    <description>Password to use against metastore database</description>
+  </property>
+
+  <property>
+    <name>datanucleus.autoCreateSchema</name>
+    <value>true</value>
+    <description>Automatically create the schema if not present</description>
+  </property>
+
+  <property>
+    <name>datanucleus.fixedDatastore</name>
+    <value>true</value>
+    <description>Prevent any changes to the database schema</description>
+  </property>
+
+  <property>
+    <name>datanucleus.autoCreateTables</name>
+    <value>true</value>
+    <description>Automatically create tables in the schema</description>
+  </property>
+
+  <!-- Metastore URI -->
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://hive-metastore:9083</value>
+    <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+  </property>
+
+  <!-- Dynamic Partitioning Configuration -->
+  <property>
+    <name>hive.exec.dynamic.partition</name>
+    <value>false</value>
+    <description>Enable dynamic partitions</description>
+  </property>
+
+  <property>
+    <name>hive.exec.dynamic.partition.mode</name>
+    <value>nonstrict</value>
+    <description>Set to nonstrict to allow dynamic partitions</description>
+  </property>
+
+  <property>
+    <name>hive.exec.max.dynamic.partitions</name>
+    <value>100000</value>
+    <description>Maximum number of dynamic partitions allowed to be created in total</description>
+  </property>
+
+  <property>
+    <name>hive.exec.max.dynamic.partitions.pernode</name>
+    <value>10000</value>
+    <description>Maximum number of dynamic partitions allowed to be created per node</description>
+  </property>
+
+  <!-- Warehouse Directory -->
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/opt/hive/warehouse</value>
+    <description>Location of default database for the warehouse</description>
+  </property>
+</configuration>

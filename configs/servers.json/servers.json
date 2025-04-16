@@ -1,0 +1,16 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Postgres Server",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "Meta_data",
+      "Username": "MetricsDB",
+      "Password": "password",
+      "SSLMode": "prefer",
+      "ConnectionType": "direct",
+      "ConnectNow": true
+    }
+  }
+}

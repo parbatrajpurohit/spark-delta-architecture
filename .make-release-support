@@ -1,0 +1,63 @@
+#!/bin/bash
+# adapted from https://github.com/mvanholsteijn/docker-makefile
+#   Copyright 2015  Xebia Nederland B.V.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+
+function hasChanges() {
+	test -n "$(git status -s -uno .)"
+}
+
+function getRelease() {
+	awk -F= '/^release=/{print $2}' .release
+}
+
+function getDockerVersion() {
+	result=$(getRelease)
+
+	if differsFromRelease; then
+		result="$result-$(git log -n 1 --format=%h .)"
+	fi
+
+	if hasChanges ; then
+		result="$result-dirty"
+	fi
+	echo $result
+}
+
+function getGitTag() {
+	result="v$(getRelease)"
+
+	if differsFromRelease; then
+		result="$result-$(git log -n 1 --format=%h .)"
+	fi
+
+	echo $result
+}
+
+function tagExists() {
+	tag=$1
+	test -n "$tag" && test -n "$(git tag | grep "^$tag\$")"
+}
+
+function differsFromRelease() {
+	tag=$1
+	! tagExists $tag || test -n "$(git diff --shortstat -r $tag .)"
+}
+
+function releaseNotesUpdated() {
+	tag=$1
+	grep "^## \[$tag\]" release_notes.md
+}
+

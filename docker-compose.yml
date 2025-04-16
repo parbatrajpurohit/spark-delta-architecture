@@ -1,0 +1,180 @@
+#hive
+version: '3.8'
+services:
+
+  postgres:
+    image: postgres:14.2
+    container_name: postgres
+    environment:
+      - POSTGRES_DB=Meta_data  
+      - POSTGRES_USER=MetricsDB       
+      - POSTGRES_PASSWORD=password    
+    networks:
+      - spark-network
+    volumes:
+      - ./hive-metastore:/var/lib/postgresql/data
+#    ports:
+#      - "5432:5432"  # 2024-11-26 11:07:13.945 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+    command: postgres -c max_connections=200
+
+  pgadmin4:
+    image: elestio/pgadmin:latest
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=metrics_db@gmail.com  # https://github.com/pgadmin-org/pgadmin4/issues/5891
+      - PGADMIN_DEFAULT_PASSWORD=password
+      - PGADMIN_LISTEN_PORT=9500
+    ports:
+      - "9500:9500"
+    networks:
+      - spark-network
+    volumes:
+      - ./configs/servers.json:/pgadmin4/servers.json
+
+  spark-master:
+    image: bitnami/spark:3.4.3
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_WEBUI_PORT=8080
+      - SPARK_MASTER_PORT=7077
+      - SPARK_SUBMIT_OPTS=--conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_NO_DAEMONIZE=true
+      - SPARK_DRIVER_MEMORY=4g
+      - SPARK_DRIVER_CORES=2
+      - SPARK_EXECUTOR_MEMORY=4g  
+      - SPARK_EXECUTOR_CORES=2    
+      - SPARK_DYNAMIC_ALLOCATION_ENABLED=true  
+      - SPARK_DYNAMIC_ALLOCATION_MIN_EXECUTORS=1
+      - SPARK_DYNAMIC_ALLOCATION_MAX_EXECUTORS=2
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+    ports:
+      - "8080:8080"
+#      - "7077:7077"
+    networks:
+      - spark-network
+    volumes:
+      - ./:/mnt
+      - ./delta-tables:/opt/bitnami/spark/spark-warehouse
+    command: >
+      /bin/bash -c "/opt/bitnami/spark/sbin/start-master.sh && tail -f /dev/null"
+
+  spark-connect:
+    image: bitnami/spark:3.4.3
+    container_name: spark-connect
+    environment:
+      - SPARK_MODE=driver
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_DRIVER_MEMORY=4g
+      - SPARK_DRIVER_CORES=2
+      - SPARK_EXECUTOR_MEMORY=4g  
+      - SPARK_EXECUTOR_CORES=2    
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+    ports:
+#      - "15002:15002"
+      - "4040:4040"
+    networks:
+      - spark-network
+    command: >
+      /bin/bash -c '/opt/bitnami/spark/sbin/start-connect-server.sh 
+      --master spark://spark-master:7077 
+      --packages io.delta:delta-core_2.12:2.4.0,org.apache.spark:spark-connect_2.12:3.4.3 
+      --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension 
+      --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog 
+      --conf spark.sql.warehouse.dir=/opt/hive/warehouse
+      --conf spark.sql.catalogImplementation=hive'
+    volumes:
+      - ./:/mnt
+      - ./delta-tables:/opt/bitnami/spark/spark-warehouse
+      - ./configs:/opt/bitnami/spark/conf
+
+    # cp /mnt/jars/* /opt/bitnami/spark/jars && chmod 664 /opt/bitnami/spark/jars/*.jar &&
+    # --conf spark.driver.extraJavaOptions="-Dhttp.proxyHost=sia-proxy-basic.geo.conti.de -Dhttp.proxyPort=8080 -Dhttps.proxyHost=sia-proxy-basic.geo.conti.de -Dhttps.proxyPort=8443"'
+    # --conf spark.driver.extraJavaOptions="-Djava.net.useSystemProxies=true"
+    # --conf "spark.driver.extraJavaOptions=-Dhttp.proxyHost=http://sia-proxy-basic.geo.conti.de -Dhttp.proxyPort=8080 -Dhttps.proxyHost=https://sia-proxy-basic.geo.conti.de -Dhttps.proxyPort=8443"'
+    # --conf spark.jars=/opt/bitnami/spark/jars/delta-core_2.12-2.4.0.jar,/opt/bitnami/spark/jars/spark-connect_2.12-3.4.3.jar
+    # https://stackoverflow.com/a/49147130/1504082   --conf spark.driver.extraJavaOptions=-Djava.net.useSystemProxies=true
+
+  spark-worker:
+    image: bitnami/spark:3.4.3
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=4g
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spark-master
+    networks:
+      - spark-network
+    volumes:
+      - ./:/mnt
+      - ./delta-tables:/opt/bitnami/spark/spark-warehouse
+    command: >
+      /bin/bash -c "/opt/bitnami/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /dev/null"
+
+  spark-worker2:
+    image: bitnami/spark:3.4.3
+    container_name: spark-worker2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=4g
+      - SPARK_CONF_DIR=/opt/bitnami/spark/conf
+    ports:
+      - "8082:8082"
+    depends_on:
+      - spark-master
+    networks:
+      - spark-network
+    volumes:
+      - ./:/mnt
+      - ./delta-tables:/opt/bitnami/spark/spark-warehouse
+    command: >
+      /bin/bash -c "/opt/bitnami/spark/sbin/start-worker.sh spark://spark-master:7077 && tail -f /dev/null"
+
+  hive-metastore:
+    image: apache/hive:4.0.0
+    container_name: hive-metastore
+    environment:
+      - HIVE_HOME=/opt/hive
+      - SERVICE_NAME=metastore
+      - DB_DRIVER=postgres
+      - SERVICE_OPTS=-Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/Meta_data -Djavax.jdo.option.ConnectionUserName=MetricsDB -Djavax.jdo.option.ConnectionPassword=password
+    networks:
+      - spark-network
+    depends_on:
+      - postgres
+    volumes:
+      - ./configs/postgresql-42.5.1.jar:/opt/hive/lib/postgresql.jar
+      - ./configs:/opt/hive/conf
+      - ./hive-placeholder:/opt/hive/warehouse
+    command: >
+      /bin/bash -c "/opt/hive/bin/schematool -dbType postgres -initOrUpgradeSchema --verbose && /opt/hive/bin/hive --service metastore"
+
+  api:
+    image: metrics-db-api:latest
+    container_name: metrics-db-api
+    environment:
+      - POSTGRES_HOST=postgres  # the name of the postgres container
+      - SPARK_CONNECT_HOST=spark-connect  # the name of the spark-connect container
+    networks:
+      - spark-network
+    ports:
+      - "5000:8000"
+    volumes:
+      - ./:/mnt
+
+
+networks:
+  spark-network:
+    driver: bridge
+
+volumes:
+  hive-metastore-data:
+  spark-warehouse:
