@@ -6,11 +6,19 @@ This project demonstrates a modern **Lakehouse architecture** using **Apache Spa
 ## 📂 Project Structure
 
 ```
-├── notebooks/              # Jupyter/Databricks notebooks for demo and development
-├── data/                   # Sample data files (CSV, JSON, Parquet, etc.)
-├── scripts/                # PySpark scripts for batch processing
-├── delta_tables/           # Output Delta tables directory
-├── README.md               # Project overview and setup instructions
+spark-delta-architecture/
+├── app/                    # Main application logic (data processing, orchestration, etc.)
+├── configs/                # Configuration files (e.g. paths, schema definitions, Spark configs)
+├── hive-metastore/         # Metastore-related setup for Delta Lake (if applicable)
+├── scripts/                # Standalone PySpark scripts for ETL and utilities
+├── test/                   # Test data and unit test scripts
+├── .dockerignore           # Files/folders to exclude from Docker builds
+├── .gitignore              # Files/folders to exclude from Git versioning
+├── .make-release-support   # Supporting files for release automation (optional)
+├── .release                # Release versioning information (optional)
+├── Dockerfile              # Docker setup for running the Spark/Delta app
+├── Makefile                # Automation commands for build/test/deploy (if used)
+├── README.md               # Project documentation and usage guide
 ```
 
 ## 🎯 Features
