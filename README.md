@@ -3,6 +3,8 @@
 
 This project demonstrates a modern **Lakehouse architecture** using **Apache Spark** and **Delta Lake**. It showcases how to ingest, transform, and manage large-scale datasets with ACID transactions, schema evolution, and efficient data versioning.
 
+![Lakehouse Architecture](Images/Diagram.jpg)
+
 ## 📂 Project Structure
 
 ```
