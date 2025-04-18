@@ -105,18 +105,15 @@ class Api:
             version += f"_{git_commit_hash}"
 
         self.app = FastAPI(
-            title="MetricsDB",
-            description="MetricsDB API provides different endpoints for pushing metrics to and to query data from delta tables 🚀",
+            title="Spark-Delta Architecture",
+            description="Spark-Delta Architecture API provides different endpoints for pushing data and and its Metadata to query data from delta tables 🚀",
             summary="API to push and query parquet files and metadata using HTTP",
             version=version,
             contact={
-                "name": "Andreas Hanauska",
-                "url": "https://github-vni.geo.conti.de/HanauskaA",
-                "email": "andreas.hanauska@continental.com",
+                "name": "Parbat Singh Rajpurohit",
+                "url": "https://github.com/parbatrajpurohit",
+                "email": "rparbat97@gmail.com",
             },
-            license_info={
-                "name": "Proprietary License (only to be used in Continental AG)",
-            }
         )
         self.setup_routes()
 
