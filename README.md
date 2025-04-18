@@ -63,12 +63,6 @@ spark-delta-architecture/
 
    > 💡 *Version may vary depending on your Spark installation.*
 
-## 📘 Notebooks Overview
-
-- `notebooks/01_delta_intro.ipynb`: Introduction to Delta Lake concepts
-- `notebooks/02_etl_process.ipynb`: Sample ETL pipeline using PySpark
-- `notebooks/03_time_travel.ipynb`: How to use time travel with Delta Lake
-- `notebooks/04_schema_evolution.ipynb`: Handle schema changes dynamically
 
 ## 📊 Use Cases
 
