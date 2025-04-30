@@ -36,8 +36,9 @@ spark-delta-architecture/
 - **Apache Spark** (PySpark)
 - **Delta Lake**
 - **Python 3.x**
-- **Jupyter Notebooks / Databricks**
 - **Parquet, CSV, JSON (data formats)**
+- **Postgres for Metadata**
+- **Pgadmin as GUI of Postgres**
 
 ## ⚙️ Setup Instructions
 
